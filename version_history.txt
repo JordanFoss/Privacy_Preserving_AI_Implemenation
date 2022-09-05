@@ -1,5 +1,8 @@
 Version History Document
 ------------------------
+Date: 5/9/2022
+Comment: Continuing work on the models. Should have DP working on some other models before the meeting.
+
 Date: 30/8/2022
 Comment: Initial work on model creation. Stared with adding Laplace and Gaussian noise to a KNN model.
 
