@@ -1,4 +1,7 @@
 Version History Document
 ------------------------
-Date: 8/9/2022
+Date: 30/8/2022
+Comment: Initial work on model creation. Stared with adding Laplace and Gaussian noise to a KNN model.
+
+Date: 8/8/2022
 Comment: Initial creation of the repo

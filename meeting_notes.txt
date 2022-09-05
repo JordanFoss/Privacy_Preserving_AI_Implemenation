@@ -1,0 +1,8 @@
+9/8/2022 Meeting:
+	Questions:
+	- How deeply should I explore how DP interferes with possible attack vectors?
+		- Yep this should be done
+	- H & S assessment for proposal?
+		- Talk about possible speed bumps in the project
+	- Uncertainity in plan?
+		- Try to be realisatic
