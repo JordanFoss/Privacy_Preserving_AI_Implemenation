@@ -1,3 +1,8 @@
+6/9/2022 Meeting:
+	- I need to implement Batch normalisation on my features as the noise affects some features more then others (normalise input features)
+	- I should implement N fold cross validation, which pretty much makes many training and test sets then takes the average
+	- I need to create a confusion matrix for each model to view the results
+
 9/8/2022 Meeting:
 	Questions:
 	- How deeply should I explore how DP interferes with possible attack vectors?
