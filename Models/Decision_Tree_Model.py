@@ -4,11 +4,14 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import KFold
 import seaborn as sns
 
-from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotFeatureImportancesDiabetes
+from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotFeatureImportancesDiabetes, plotConfusionMatrix
 
 sns.set_style('darkgrid')
 #Load in the data
 diabetes = loadDiabetesData()
+
+#Number of trials to run
+trials = 2
 
 diabetes_features = [x for i,x in enumerate(diabetes.columns) if i!=8]
 
@@ -38,9 +41,9 @@ for index in range(len(diabetes_features)):
     np_mean_feature_importance.append(np.mean([x[index] for x in np_feature_importance]))
 print("Feature importances: {}".format(np_mean_feature_importance))
 
-plotFeatureImportancesDiabetes(tree, diabetes_features)
-plt.title("Non-Private Decision Tree")
+plotFeatureImportancesDiabetes(tree, diabetes_features, "Non-Private Decision Tree")
 plt.savefig('feature_importance')
+plotConfusionMatrix(y_test, tree.predict(X_test), "Non-Private Decision Tree Confusion Matrix")
 
 # Private Laplace Decision Tree Model
 # Generate the private data set
@@ -53,7 +56,7 @@ l_testing_acc = []
 l_feature_importance = []
 l_mean_feature_importance = []
 
-for i in range(200):
+for i in range(trials):
     laplacePrivateDataset = addLaplaceNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
     testing_acc = []
@@ -97,9 +100,9 @@ for index in range(len(diabetes_features)):
     
 print("Feature importances: {}".format(l_mean_feature_importance))
 
-plotFeatureImportancesDiabetes(tree, diabetes_features)
-plt.title("Laplace Private Decision Tree")
+plotFeatureImportancesDiabetes(tree, diabetes_features, "Laplace Private Decision Tree")
 plt.savefig('feature_importance')
+plotConfusionMatrix(y_test, tree.predict(X_test), "Laplace Private Decision Tree Confusion Matrix")
 
 g_training_acc = []
 g_testing_acc = []
@@ -107,7 +110,7 @@ g_feature_importance = []
 g_mean_feature_importance = []
 
 # Private Gaussian Logistic Regression Model
-for i in range(200):
+for i in range(trials):
     # Generate a copy of the data set to make private
     gaussianPrivateDataset = addGaussianNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
@@ -152,6 +155,6 @@ for index in range(len(diabetes_features)):
     
 print("Feature importances: {}".format(g_mean_feature_importance))
 
-plot_feature_importances_diabetes(tree, diabetes_features)
-plt.title("Gaussian Private Decision Tree")
+plotFeatureImportancesDiabetes(tree, diabetes_features, "Gaussian Private Decision Tree")
 plt.savefig('feature_importance')
+plotConfusionMatrix(y_test, tree.predict(X_test), "Gaussian Private Decision Tree Confusion Matrix")

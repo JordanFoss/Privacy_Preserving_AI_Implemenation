@@ -4,11 +4,14 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import KFold
 import seaborn as sns
 
-from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise
+from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotConfusionMatrix
 
 sns.set_style('darkgrid')
 #Load in the data
 diabetes = loadDiabetesData()
+
+#Number of trials to run
+trials = 2
 
 # Non-private K-Nearest Neighbours
 kf = KFold(n_splits=5)
@@ -29,6 +32,8 @@ for train, test in kf.split(diabetes):
 print('Accuracy of non-private KNN classifier on training set: {:.2f}'.format(np.mean(np_training_acc)))
 print('Accuracy of non-private KNN classifier on test set: {:.2f}'.format(np.mean(np_testing_acc)))
 
+plotConfusionMatrix(y_test, knn.predict(X_test), "Non-Private KNN Confusion Matrix")
+
 # Private K-Nearest Neighbours
 # Generatet the private data set
 delta = 1
@@ -39,7 +44,7 @@ l_training_acc = []
 l_testing_acc = []
 
 # Generate a copy of the data set to make private
-for i in range(200):
+for i in range(trials):
     laplacePrivateDataset = addLaplaceNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
     testing_acc = []
@@ -76,11 +81,13 @@ plt.xlabel("Accuracy (%)")
 plt.ylabel("Number of Samples")
 plt.show()
 
+plotConfusionMatrix(y_test, knn.predict(X_test), "Laplace Private KNN Confusion Matrix")
+
 g_training_acc = []
 g_testing_acc = []
 
 # Generate a copy of the data set to make private
-for i in range(200):
+for i in range(trials):
     gaussianPrivateDataset = addGaussianNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
     testing_acc = []
@@ -116,3 +123,5 @@ plt.title("KNN Testing Set Accuracy under Gaussian Noise")
 plt.xlabel("Accuracy (%)")
 plt.ylabel("Number of Samples")
 plt.show()
+
+plotConfusionMatrix(y_test, knn.predict(X_test), "Gaussian Private KNN Confusion Matrix")

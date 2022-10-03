@@ -4,11 +4,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 import seaborn as sns
 
-from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise
+from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotConfusionMatrix
 
 sns.set_style('darkgrid')
 #Load in the data
 diabetes = loadDiabetesData()
+
+#Number of trials to run
+trials = 2
 
 # Non-private LR Neighbours
 kf = KFold(n_splits=5)
@@ -28,6 +31,8 @@ for train, test in kf.split(diabetes):
 print('Accuracy of non-private LR classifier on training set: {:.2f}'.format(np.mean(np_training_acc)))
 print('Accuracy of non-private LR classifier on test set: {:.2f}'.format(np.mean(np_testing_acc)))
 
+plotConfusionMatrix(y_test, logreg.predict(X_test), "Non-Private LR Confusion Matrix")
+
     
 # Private Laplace Logistic Regression Model
 # Generatet the private data set
@@ -38,7 +43,7 @@ scale = delta/epsilon
 l_training_acc = []
 l_testing_acc = []
 
-for i in range(200):
+for i in range(trials):
     laplacePrivateDataset = addLaplaceNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
     testing_acc = []
@@ -76,11 +81,13 @@ plt.xlabel("Accuracy (%)")
 plt.ylabel("Number of Samples")
 plt.show()
 
+plotConfusionMatrix(y_test, logreg.predict(X_test), "Laplace Private LR Confusion Matrix")
+
 g_training_acc = []
 g_testing_acc = []
 
 # Private Gaussian Logistic Regression Model
-for i in range(200):
+for i in range(trials):
     gaussianPrivateDataset = addGaussianNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
     testing_acc = []
@@ -116,3 +123,5 @@ plt.title("LR Testing Set Accuracy under Gaussian Noise")
 plt.xlabel("Accuracy (%)")
 plt.ylabel("Number of Samples")
 plt.show()
+
+plotConfusionMatrix(y_test, logreg.predict(X_test), "Gaussian Private LR Confusion Matrix")

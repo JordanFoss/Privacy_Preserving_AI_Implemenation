@@ -1,15 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 import seaborn as sns
 
-from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotFeatureImportancesDiabetes
+from Data_Functions import loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotFeatureImportancesDiabetes, plotConfusionMatrix
 
 sns.set_style('darkgrid')
 #Load in the data
 diabetes = loadDiabetesData()
+
+#Number of trials to run
+trials = 2
 
 diabetes_features = [x for i,x in enumerate(diabetes.columns) if i!=8]
 
@@ -39,9 +41,9 @@ for index in range(len(diabetes_features)):
     np_mean_feature_importance.append(np.mean([x[index] for x in np_feature_importance]))
 print("Feature importances: {}".format(np_mean_feature_importance))
 
-plotFeatureImportancesDiabetes(rf, diabetes_features)
-plt.title("Non-Private Random Forest")
+plotFeatureImportancesDiabetes(rf, diabetes_features, "Non-Private Random Forest")
 plt.savefig('feature_importance')
+plotConfusionMatrix(y_test, rf.predict(X_test), "Non-Private Random Forest Confusion Matrix")
 
 # Private Laplace Random Forest Model
 # Generate the private data set
@@ -54,7 +56,7 @@ l_testing_acc = []
 l_feature_importance = []
 l_mean_feature_importance = []
 
-for i in range(200):
+for i in range(trials):
     laplacePrivateDataset = addLaplaceNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
     testing_acc = []
@@ -98,9 +100,10 @@ for index in range(len(diabetes_features)):
     
 print("Feature importances: {}".format(l_mean_feature_importance))
 
-plotFeatureImportancesDiabetes(rf, diabetes_features)
-plt.title("Laplace Private Random Forest")
+
+plotFeatureImportancesDiabetes(rf, diabetes_features, "Laplace Private Random Forest")
 plt.savefig('feature_importance')
+plotConfusionMatrix(y_test, rf.predict(X_test), "Laplace Private Random Forest Confusion Matrix")
 
 g_training_acc = []
 g_testing_acc = []
@@ -108,7 +111,7 @@ g_feature_importance = []
 g_mean_feature_importance = []
 
 # Private Gaussian Logistic Regression Model
-for i in range(200):
+for i in range(trials):
     # Generate a copy of the data set to make private
     gaussianPrivateDataset = addGaussianNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale)
     training_acc = []
@@ -153,6 +156,7 @@ for index in range(len(diabetes_features)):
     
 print("Feature importances: {}".format(g_mean_feature_importance))
 
-plot_feature_importances_diabetes(rf, diabetes_features)
-plt.title("Gaussian Private Random Forest")
+
+plotFeatureImportancesDiabetes(rf, diabetes_features, "Gaussian Private Random Forest")
 plt.savefig('feature_importance')
+plotConfusionMatrix(y_test, rf.predict(X_test), "Gaussian Private Random Forest Confusion Matrix")
