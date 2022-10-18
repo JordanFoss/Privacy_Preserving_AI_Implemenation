@@ -215,7 +215,7 @@ def runModel(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_features=[
     # Private Staircase Logistic Regression Model
     for i in range(trials):
         # Generate a copy of the data set to make private
-        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], scale, sensitivity, 0.5, diabetes_features)
+        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, 0.5, diabetes_features)
         training_acc = []
         testing_acc = []
         

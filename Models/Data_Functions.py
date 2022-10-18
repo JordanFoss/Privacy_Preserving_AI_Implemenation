@@ -14,14 +14,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 
-def isKAnonymized(df, k):
-    for index, row in df.iterrows():
-        query = ' & '.join([f'{col} == {row[col]}' for col in df.columns])
-        rows = df.query(query)
-        if rows.shape[0] < k:
-            return False
-    return True
-
 def generateModel(model_type, X_train, y_train):
     """
     This function generates a model and trains it based on the model type.
@@ -302,7 +294,7 @@ def staircaseRV(epsilon, sensitivity, gamma):
     ----------
     epsilon : float
         The mean for the laplace distribution.
-    delta : float
+    sensitivity : float
         The standard deviation.
     gamma : float
         float in the range [0,1]
@@ -343,3 +335,13 @@ def staircaseRV(epsilon, sensitivity, gamma):
     
     return X
 
+def noisy_gradient_descent(iterations, epsilon, delta):
+    theta = np.zeros(X_train.shape[1])
+    sensitivity = '???'
+
+    for i in range(iterations):
+        grad = avg_grad(theta, X_train, y_train)
+        noisy_grad = gaussian_mech_vec(grad, sensitivity, epsilon, delta)
+        theta = theta - noisy_grad
+
+    return theta
