@@ -254,6 +254,23 @@ def addStaircaseNoise(dataSet, epsilon, delta, gamma, features):
     return privateDataSet
     
 def probability_to_occur_at(attempt, b):
+    """
+    This function is used in the staircase random noise generation.
+    It is effectively the probabilities from a binomial distribution.
+
+    Parameters
+    ----------
+    attempt : int
+        Number of the attempt.
+    b : float
+        Chance of success.
+
+    Returns
+    -------
+    float
+        Prob of success.
+
+    """
     return (1-b)*b**(attempt) 
 
 def geometricRV(b, probs):
@@ -335,13 +352,59 @@ def staircaseRV(epsilon, sensitivity, gamma):
     
     return X
 
-def noisy_gradient_descent(iterations, epsilon, delta):
+
+# These functions are for the Differentially private gradient descent model
+# The thing to keep in mind with this is that noise is not added to the data
+# noise is just added to the gradient as it searchs for the minimum loss
+def gradient(theta, xi, yi):
+    exponent = yi * (xi.dot(theta))
+    return - (yi*xi) / (1+np.exp(exponent))
+
+def L2_clip(v, b):
+    norm = np.linalg.norm(v, ord=2)
+    
+    if norm > b:
+        return b * (v / norm)
+    else:
+        return v
+
+def avg_grad(theta, X, y):
+    grads = [gradient(theta, xi, yi) for xi, yi in zip(X, y)]
+    return np.mean(grads, axis=0)
+
+def laplace_mech(v, sensitivity, epsilon):
+    return v + np.random.laplace(loc=0, scale=sensitivity / epsilon)
+
+def gaussian_mech(v, sensitivity, epsilon, delta):
+    return v + np.random.normal(loc=0, scale=sensitivity * np.sqrt(2*np.log(1.25/delta)) / epsilon)
+
+def gaussian_mech_vec(v, sensitivity, epsilon, delta):
+    return v + np.random.normal(loc=0, scale=sensitivity * np.sqrt(2*np.log(1.25/delta)) / epsilon, size=len(v))
+
+def gradient_sum(theta, X, y, b):
+    gradients = [L2_clip(gradient(theta, x_i, y_i), b) for x_i, y_i in zip(X,y)]
+        
+    # sum query
+    # L2 sensitivity is b (by clipping performed above)
+    return np.sum(gradients, axis=0)
+
+def noisy_gradient_descent(X_train, y_train, iterations, epsilon, delta):
+    # Starts with a guess model of all zeros
     theta = np.zeros(X_train.shape[1])
-    sensitivity = '???'
+    
+    sensitivity = 5.0
+    
+    # A count of the number of training elements with some added noise
+    # Compute a noisy count of the number of training examples (sensitivity 1)
+    noisy_count = gaussian_mech(X_train.shape[0], 1, epsilon, delta)
 
     for i in range(iterations):
-        grad = avg_grad(theta, X_train, y_train)
-        noisy_grad = gaussian_mech_vec(grad, sensitivity, epsilon, delta)
-        theta = theta - noisy_grad
+        # Add noise to the sum of the gradients based on its sensitivity
+        grad_sum        = gradient_sum(theta, X_train, y_train, sensitivity)
+        noisy_grad_sum  = gaussian_mech_vec(grad_sum, sensitivity, epsilon, delta)
+        
+        # Divide the noisy sum from (1) by the noisy count from (2)
+        noisy_avg_grad  = noisy_grad_sum / noisy_count
+        theta           = theta - noisy_avg_grad
 
     return theta

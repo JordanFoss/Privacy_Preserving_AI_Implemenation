@@ -1,5 +1,8 @@
 Version History Document
 ------------------------
+Date: 3/3/2023
+Comment: I've figured out where I was and now I'm working on getting private gradient descent working.
+
 Date: 27/2/2023
 Comment: Starting work on the project again. I need to figure out where I left off
 

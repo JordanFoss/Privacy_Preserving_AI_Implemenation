@@ -1,0 +1,62 @@
+ENGG 4812 Plan:
+	Week 3 12/3: 
+		- Finish the DP Gradient Descent tutorial to gain a good understanding of how to implement DP on ML algorithms (Done)
+		- Identify the novel thing I could do for my Thesis. Possible ideas:
+			- Implement a differentially private verison of some ML algorithm using what I learned from the DP Gradient Descent tutorial (Effectively look for a ML algorithm that hasn't been made Differentially private and try to implement it)
+			- Extend a DP implementation from literature with some advanced techniques, such as advance composition from RDP, bounding the total privacy cost for epsilon by calculating an epsilon per iteration, etc (Effectively take from DP ML model from a paper and try to improve it)
+		- 
+	
+	Week 4 19/3:
+		- Start research on how to implement the novel idea I have choosen
+			- For the first option this would be finding a suitable ML algorithm and understanding how it works
+			- For the second, this would be searching through literature to identify a model I could improve on
+	
+	Week 5 26/3:
+		- Working on the implementation of the idea that I have decided on
+			- For the first option this would be adding noise (Laplace, Guassian and Staircase) and then doing an equivalent to Graident clipping to enforce the desired sensitivity
+			- For the second option this would be copying the implementation in the paper I have choosen and proving that it provides similar results
+	
+	Week 6 2/4:
+		- Working on the implementation of the idea that I have decided on
+			- For the first option this would be adding noise (Laplace, Guassian and Staircase) and then doing an equivalent to Graident clipping to enforce the desired sensitivity
+			- For the second option this would be working on implementation of a potential improvement, such as calculating epsilon per iteration of algorithm, or RDP
+	
+	Week 7 9/4:
+		- Working on the implementation of the idea that I have decided on
+			- For the first option this would be adding noise (Laplace, Guassian and Staircase) and then doing an equivalent to Graident clipping to enforce the desired sensitivity
+			- For the second option this would be working on implementation of a potential improvement, such as calculating epsilon per iteration of algorithm, or RDP
+	
+	Week 8 16/4:
+		- Investigating possible metrics by which the privacy of my novel implementation can be quantified
+			- epsilon, delta differential privacy
+			- ...
+		- Ensure that I collect results from my novel model and from the non-private equivalent for comparsion purposes in the report
+	
+	Week 9 23/4:
+		- Investigate what these metrics of privacy say about my novel model in comparsion to the non-private equivalent
+			- My model should be privacy with respect to some quantifier (epsilon)
+			- Ensure that in the report I highlight that it is private and by how much with respect to some privay metric
+	
+	Week 10 30/4:
+		- Writing Thesis (Particular focus on the introduction section)
+			- Background to privacy vs security and it's importance
+			- Brief intro to DP
+			- Brief intro to ML models and algorithms
+	
+	Week 11 7/5:
+		- Writing Thesis (Particular focus on the Local DP results section)
+			- In depth explaination of DP and different ML algorithms through my work on local DP
+	
+	Week 12 14/5:
+		- This week should be spent getting the poster and the demo ready for next week
+	
+	Week 13 21/5:
+		- Poster and Demo is due this week on the 19/5
+		- Any spare time this week will focus on writing the results section for the Thesis
+	
+	Week 14 28/5:
+		- Writing Thesis (Particular focus on the Central DP results section)
+	
+	Week 15 4/6:
+		- Thesis Report is due on the 5/6
+		- This week should focus on writing the conclusion, proof reading the report and getting it proof read by others

@@ -11,6 +11,22 @@ from Data_Functions import addStaircaseNoise, generateModel, loadDiabetesData, a
 
 def generateAccPrivacyGraph(model_type, trials, diabetes_features=[]):
     """
+    This function generates accuracy graphs for a model type with a given number of trials (since random noise is added multiple trials
+    are taken to negate the varience). This results are then ploted to show accuracy over a range of different epsilons.
+
+    Parameters
+    ----------
+    model : str
+        String representing the model to run.
+    trials : int
+        Number of trials to run for the noisy models.
+    diabetes_features : [str]
+        List of features using for feature importance analysis
+        
+    Returns
+    -------
+    Graphs showing accuracy for non-private, laplace, gaussian and staircase noise
+    
     """
     np_training_results = []
     np_testing_results = []
@@ -65,6 +81,8 @@ def runModel(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_features=[
         String representing the model to run.
     trials : int
         Number of trials to run for the noisy models.
+    diabetes_features : [str]
+        List of features using for feature importance analysis
     delta : int
         Proporational to the amount of noise added
     epsilon : float
@@ -72,7 +90,7 @@ def runModel(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_features=[
         
     Returns
     -------
-    None.
+    Training and test mean accuracy for non-private, laplace, gaussian and staircase noise.
 
     """
     

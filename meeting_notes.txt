@@ -12,5 +12,24 @@
 	- Uncertainity in plan?
 		- Try to be realisatic
 		
-3/3/2023 Meeting
-	- 
+3/3/2023 Meeting:
+	- What could be the noviality (What have I done that hasn't been done before)?
+	- What about the Pipeline?
+	- Proving how private it is?
+	- Losses in accuracy when not private (Using epsilon definition to quanify how accuracy changes with respect to privacy)?
+	- Look for other metrics of privacy?
+	- Create plan for rest of semester so show to Dan in my next nexting?
+	- Poster/Demo will be a A3 slide for the poster, which will be about 2 minutes of the demo and the rest of the 30 minutes is for demoing my work
+	- Dan will send me some previous Thesis some I can get an idea of how to write mine
+	
+10/3/2023 Meeting:
+	- Dan said to go with Extend a DP implementation from literature with some advanced techniques, such as advance composition from RDP, bounding the total privacy cost for epsilon by calculating an epsilon per iteration, etc (Effectively take from DP ML model from a paper and try to improve it)
+	- Dan said that Thursday morning is a better time for him for this meeting
+	- Epsilon, Delta Differential Privacy definition is fine for proving my model is private
+	- Dan seems fine with the idea of 4 weeks for writing the report
+	
+16/3/2023 Meeting:
+	- I told Dan about the LoPub paper I was looking at, and he liked it
+	- He said to work on providing a summary of the paper and the method, then look at how to improve it
+	- I've come to the decision that my paper will be focused on Local Differential Privacy with the idea of providing a small improvement on this LoPub method
+	- I should probably change the name of my paper to mention that LDP aspect
