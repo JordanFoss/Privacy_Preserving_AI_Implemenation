@@ -33,3 +33,6 @@
 	- He said to work on providing a summary of the paper and the method, then look at how to improve it
 	- I've come to the decision that my paper will be focused on Local Differential Privacy with the idea of providing a small improvement on this LoPub method
 	- I should probably change the name of my paper to mention that LDP aspect
+	
+23/3/2023 Meeting:
+	- I need to create an overall pipe of the project for showing the dataset, the DP algorithm that adds the noise, the ML algorithm that is trained on the noisy data and the metric by which the privacy is measured
