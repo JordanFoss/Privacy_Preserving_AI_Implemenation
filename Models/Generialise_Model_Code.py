@@ -7,9 +7,61 @@ import seaborn as sns
 from sklearn.model_selection import KFold
 
 #Function Imports
-from Data_Functions import addStaircaseNoise, generateModel, loadDiabetesData, addLaplaceNoise, addGaussianNoise, plotFeatureImportancesDiabetes, plotConfusionMatrix, plotAccuracies
+from Data_Functions import *
 
-def generateAccPrivacyGraph(model_type, trials, diabetes_features=[]):
+def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
+    """
+    This function generates accuracy graphs for a model type with a given number of trials (since random noise is added multiple trials
+    are taken to negate the varience). This results are then ploted to show accuracy over a range of different epsilons.
+
+    Parameters
+    ----------
+    model : str
+        String representing the model to run.
+    trials : int
+        Number of trials to run for the noisy models.
+    diabetes_features : [str]
+        List of features using for feature importance analysis
+        
+    Returns
+    -------
+    Graphs showing accuracy for non-private, laplace, gaussian and staircase noise
+    
+    """
+    #Load in the data
+    diabetes = loadDiabetesData()
+    
+    # Generate the Non-Private accuracies for comparsion
+    np_tr, np_ts = runModelNonPrivate(model_type, diabetes)
+    
+    l_training_results = []
+    l_testing_results = []
+    sensitivity = 1
+    epsilons = np.linspace(0.01, 10, 50)
+    for epsilon in epsilons:
+        l_tr, l_ts = runModelLaplace(model_type, trials, diabetes, sensitivity, epsilon)
+        l_training_results.append(l_tr)
+        l_testing_results.append(l_ts)
+    
+    plt.plot(epsilons, [np_tr for x in range(len(epsilons))], label="Non-Private")
+    plt.plot(epsilons, l_training_results, label="Laplace Private")
+    plt.title(str(model_type) + " Training Accuracies (" + str(trials) + " trials)")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
+    plt.legend()
+    plt.show()
+    
+    plt.plot(epsilons, [np_ts for x in range(len(epsilons))], label="Non-Private")
+    plt.plot(epsilons, l_testing_results, label="Laplace Private")
+    plt.title(str(model_type) + " Testing Accuracies (" + str(trials) + " trials)")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
+    plt.legend()
+    plt.show()
+    
+    return l_training_results, l_testing_results
+
+def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
     """
     This function generates accuracy graphs for a model type with a given number of trials (since random noise is added multiple trials
     are taken to negate the varience). This results are then ploted to show accuracy over a range of different epsilons.
@@ -39,7 +91,7 @@ def generateAccPrivacyGraph(model_type, trials, diabetes_features=[]):
     sensitivity = 1
     epsilons = np.linspace(0.01, 10, 50)
     for epsilon in epsilons:
-        np_tr, l_tr, g_tr, s_tr, np_ts, l_ts, g_ts, s_ts = runModel(model_type, trials, sensitivity, epsilon, diabetes_features)
+        np_tr, l_tr, g_tr, s_tr, np_ts, l_ts, g_ts, s_ts = runModelAll(model_type, trials, sensitivity, epsilon, diabetes_features)
         np_training_results.append(np_tr)
         np_testing_results.append(np_ts)
         l_training_results.append(l_tr)
@@ -49,28 +101,92 @@ def generateAccPrivacyGraph(model_type, trials, diabetes_features=[]):
         s_training_results.append(s_tr)
         s_testing_results.append(s_ts)
     
-    plt.plot(np_training_results, epsilons, label="Non-Private")
-    plt.plot(l_training_results, epsilons, label="Laplace Private")
-    plt.plot(g_training_results, epsilons, label="Gaussian Private")
-    plt.plot(s_training_results, epsilons, label="Staircase Private")
+    plt.plot(epsilons, np_training_results, label="Non-Private")
+    plt.plot(epsilons, l_training_results, label="Laplace Private")
+    plt.plot(epsilons, g_training_results, label="Gaussian Private")
+    plt.plot(epsilons, s_training_results, label="Staircase Private")
     plt.title("Training accuracies with different privacy levels")
-    plt.xlabel("Accuracy")
-    plt.ylabel("Epsilon")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
     plt.legend()
     plt.show()
     
-    plt.plot(np_testing_results, epsilons, label="Non-Private")
-    plt.plot(l_testing_results, epsilons, label="Laplace Private")
-    plt.plot(g_testing_results, epsilons, label="Gaussian Private")
-    plt.plot(s_testing_results, epsilons, label="Staircase Private")
+    plt.plot(epsilons, np_testing_results, label="Non-Private")
+    plt.plot(epsilons, l_testing_results, label="Laplace Private")
+    plt.plot(epsilons, g_testing_results, label="Gaussian Private")
+    plt.plot(epsilons, s_testing_results, label="Staircase Private")
     plt.title("Testing accuracies with different privacy levels")
-    plt.xlabel("Accuracy")
-    plt.ylabel("Epsilon")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
     plt.legend()
     plt.show()
     
+def runModelNonPrivate(model_type, diabetes, diabetes_features=[]):    
+    
+    # ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+    diabetes_feature_labels = [x for i,x in enumerate(diabetes.columns) if i!=8]
+    
+    if len(diabetes_features) == 0:
+        diabetes_features = [x for i,x in enumerate(diabetes.columns) if i!=8]
+    
+    # Non-private RF Neighbours
+    kf = KFold(n_splits=5)
+    np_training_acc = []
+    np_testing_acc = []
+    
+    for train, test in kf.split(diabetes):
+        X_train, X_test, y_train, y_test = (diabetes.loc[train, diabetes.columns != 'Outcome'], 
+                                            diabetes.loc[test, diabetes.columns != 'Outcome'], 
+                                            diabetes.loc[train, diabetes.columns == 'Outcome'].squeeze(), 
+                                            diabetes.loc[test, diabetes.columns == 'Outcome'].squeeze())
+        model = generateModel(model_type, X_train, y_train)
+        np_training_acc.append(model.score(X_train, y_train))
+        np_testing_acc.append(model.score(X_test, y_test))  
+    return np.mean(np_training_acc), np.mean(np_testing_acc)
 
-def runModel(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_features=[], gen_figures=False, gen_print=False):
+
+def runModelLaplace(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, diabetes_features=[]):
+    #Standard Deviation for noise
+    scale = sensitivity/epsilon
+    
+    
+    # ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+    diabetes_feature_labels = [x for i,x in enumerate(diabetes.columns) if i!=8]
+    
+    if len(diabetes_features) == 0:
+        diabetes_features = [x for i,x in enumerate(diabetes.columns) if i!=8]
+    
+    # Non-private RF Neighbours
+    kf = KFold(n_splits=5)
+    
+    l_training_acc = []
+    l_testing_acc = []
+    l_feature_importance = []
+    l_mean_feature_importance = []
+    
+    for i in range(trials):
+        laplacePrivateDataset = addLaplaceNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
+        training_acc = []
+        testing_acc = []
+        
+        for train, test in kf.split(diabetes):
+            X_train, X_test, y_train, y_test = (laplacePrivateDataset.loc[train, laplacePrivateDataset.columns != 'Outcome'], 
+                                                laplacePrivateDataset.loc[test, laplacePrivateDataset.columns != 'Outcome'], 
+                                                diabetes.loc[train, diabetes.columns == 'Outcome'].squeeze(), 
+                                                diabetes.loc[test, diabetes.columns == 'Outcome'].squeeze())
+        
+            model = generateModel(model_type, X_train, y_train)
+            training_acc.append(model.score(X_train, y_train))
+            testing_acc.append(model.score(X_test, y_test))
+    
+        l_training_acc.append(np.mean(training_acc))
+        l_testing_acc.append(np.mean(testing_acc))
+    
+    # Model is done being generated
+    return np.mean(l_training_acc), np.mean(l_testing_acc)
+
+
+def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_features=[], gen_figures=False, gen_print=False):
     """
     This function should run whatever model is put in the model parameter.
     It should also run for the number of trials given.
@@ -191,7 +307,7 @@ def runModel(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_features=[
     # Private Gaussian Logistic Regression Model
     for i in range(trials):
         # Generate a copy of the data set to make private
-        gaussianPrivateDataset = addGaussianNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
+        gaussianPrivateDataset = addGaussianNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
         training_acc = []
         testing_acc = []
         

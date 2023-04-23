@@ -38,9 +38,9 @@
 	- I need to create an overall pipe line of the project for showing the dataset, the DP algorithm that adds the noise, the ML algorithm that is trained on the noisy data and the metric by which the privacy is measured.
 	
 30/3/2023 Meeting:
-	- Show the different mechnaisms that can be used
-	- Explain how the noise is added
+	- Show the different mechnaisms that can be used (Done)
+	- Explain how the noise is added (Done)
 	- Show the relationship to epsilon and delta
 	- Line box and whisker plot for accuracy vs privacy
-	- Always use 3 dots for ...
+	- Always use 3 dots for ... (Done)
 	- Send Dan an email asking about access to the cluster for run my experiments

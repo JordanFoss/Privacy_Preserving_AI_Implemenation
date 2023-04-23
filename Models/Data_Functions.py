@@ -195,11 +195,12 @@ def addLaplaceNoise(dataSet, mu, scale, features):
             privateDataSet[feature][index] += np.random.laplace(mu, scale)
     return privateDataSet
     
-def addGaussianNoise(dataSet, mu, scale, features):
+def addGaussianNoiseCell(dataSet, mu, scale, features):
     """
     This function takes a pandas dataframe and adds random noise to it from
     the Gaussian distribution. The parameters of said distribution are defined
-    in the function call.
+    in the function call. Additionally, the random noise is added individually
+    each cell in the dataframe.
     
     Parameters
     ----------
@@ -222,6 +223,37 @@ def addGaussianNoise(dataSet, mu, scale, features):
     for feature in features:
         for index in range(dataSet[feature].size):
             privateDataSet[feature][index] += np.random.normal(mu, scale)
+    return privateDataSet
+    
+def addGaussianNoiseRow(dataSet, mu, scale, features):
+    """
+    This function takes a pandas dataframe and adds random noise to it from
+    the Gaussian distribution. The parameters of said distribution are defined
+    in the function call. Additionally, the random noise is added to each row
+    so the noise to each feature in that row is the same.
+    
+    Parameters
+    ----------
+    dataSet : Pandas.Dataframe
+        The dataset that you wish to add the noise to.
+    mu : float
+        The mean for the laplace distribution.
+    scale : float
+        The standard deviation.
+    features : [str]
+        Features to add noise to.
+
+    Returns
+    -------
+    privateDataSet : Pandas.Dataframe
+        A copy of the dataSet with gaussian random noise added.
+
+    """
+    privateDataSet = dataSet.copy()
+    for feature in features:
+        noise = np.random.normal(mu, scale)
+        for index in range(dataSet[feature].size):
+            privateDataSet[feature][index] += noise
     return privateDataSet
 
 def addStaircaseNoise(dataSet, epsilon, delta, gamma, features):
