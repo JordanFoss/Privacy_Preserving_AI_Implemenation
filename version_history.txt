@@ -1,5 +1,8 @@
 Version History Document
 ------------------------
+Date 26/4/2023
+Comment: I notice that I didn't normalise the data after adding the noise, so I did that. I also created line plots with shown variance and a representation of the data before and after noise is added.
+
 Date 23/4/2023
 Comment: I've made the decision to focus my thesis on Local Differential privacy and as such have focused on that.
 

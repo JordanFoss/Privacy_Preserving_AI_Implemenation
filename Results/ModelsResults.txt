@@ -1,7 +1,0 @@
-Laplace Noise (RF) (20 trials) training accuracy -> 0.9773531585498264
-
-Laplace Noise (RF) (20 trials) testing accuracy ->  0.6473958237840591
-
-Laplace Noise (RF) (20 trials) (row) training accuracy -> 0.984494075898414
-
-Laplace Noise (RF) (20 trials) (row) testing accuracy -> 0.7486567354214411

@@ -305,6 +305,8 @@ def addGaussianNoiseRow(dataSet, mu, scale, features):
     in the function call. Additionally, the random noise is added to each row
     so the noise to each feature in that row is the same.
     
+    Note: This doesn't work, it gives very strange results
+    
     Parameters
     ----------
     dataSet : Pandas.Dataframe
@@ -423,8 +425,8 @@ def staircaseRV(epsilon, sensitivity, gamma):
 
     Returns
     -------
-    privateDataSet : Pandas.Dataframe
-        A copy of the dataSet with gaussian random noise added.
+    X : float
+        Sample from staircase distribution
 
     """
     
@@ -439,6 +441,7 @@ def staircaseRV(epsilon, sensitivity, gamma):
     #Second generate G
     b = np.exp(-epsilon)
     probs = [probability_to_occur_at(z, b) for z in range(100)]
+    
     G = geometricRV(b, probs)
     
     #Thrid generate U uniformly distributioned between [0,1]

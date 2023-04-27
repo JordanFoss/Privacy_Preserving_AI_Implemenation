@@ -46,4 +46,11 @@
 	- Send Dan an email asking about access to the cluster for run my experiments (I can manage to get reasonable computation times by using incements of 0.5 for epsilon)
 	
 27/4/2023 Meeting:
+	- Dan said that I was doing the best of most of the thesis students, which helped calm my anxiety
+	- For the demo, It will be show the poster for a minute or two then go into demoing what I have done
+	 - This could be maybe a high level overview of what the code does since showing the code straight is a little much to take in
+	- Dan says he can send me a thesis report from a previous student to help with my structure for the report
+	- I still want to ask him how I should frame my report
+
+4/5/2023 Meeting:
 	- 

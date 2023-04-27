@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 #Model Imports
 from sklearn.model_selection import KFold
@@ -9,10 +10,68 @@ from sklearn.model_selection import KFold
 #Function Imports
 from Data_Functions import *
 
+def plotDataBeforeAndAfterNoise():
+    """
+    This function generates a plot of the dataset before noise is added and
+    after. This is useful for gaining a visual understanding of what adding
+    noise, and thus privacy is doing to the data.
+    
+
+    Returns
+    -------
+    Graphs showing noise before and after noise is added
+
+    """
+    
+    diabetes = loadDiabetesData()
+    # ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+    diabetes_feature_labels = [x for i,x in enumerate(diabetes.columns) if i!=8]
+        
+    sensitivity = 1
+    epsilon = 1
+    
+    #Standard Deviation for noise
+    scale = sensitivity/epsilon
+    diabetes.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    plt.title("Original Dataset")
+    plt.show()
+    
+    laplacePrivateDataset = addLaplaceNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_feature_labels)
+    
+    scaler = MinMaxScaler()
+    scaler.fit(laplacePrivateDataset)
+    scaled = scaler.fit_transform(laplacePrivateDataset)
+    laplacePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
+    
+    laplacePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    plt.title("Laplace Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
+    plt.show()
+    
+    gaussianPrivateDataset = addGaussianNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_feature_labels)
+    
+    scaler.fit(gaussianPrivateDataset)
+    scaled = scaler.fit_transform(gaussianPrivateDataset)
+    gaussianPrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
+    
+    gaussianPrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    plt.title("Gaussian Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
+    plt.show()
+    
+    staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0.5, scale, 0.5, diabetes_feature_labels)
+    scaler.fit(staircasePrivateDataset)
+    scaled = scaler.fit_transform(staircasePrivateDataset)
+    staircasePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
+    
+    staircasePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    plt.title("Staricase Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
+    plt.show()
+
 def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
     """
-    This function generates accuracy graphs for a model type with a given number of trials (since random noise is added multiple trials
-    are taken to negate the varience). This results are then ploted to show accuracy over a range of different epsilons.
+    This function generates accuracy graphs for a model type with a given number
+    of trials (since random noise is added multiple trials
+    are taken to negate the varience). This results are then ploted to show 
+    accuracy over a range of different epsilons.
 
     Parameters
     ----------
@@ -25,7 +84,7 @@ def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
         
     Returns
     -------
-    Graphs showing accuracy for non-private, laplace, gaussian and staircase noise
+    Graphs showing accuracy for non-private and laplace noise
     
     """
     #Load in the data
@@ -75,8 +134,11 @@ def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
 
 def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
     """
-    This function generates accuracy graphs for a model type with a given number of trials (since random noise is added multiple trials
-    are taken to negate the varience). This results are then ploted to show accuracy over a range of different epsilons.
+    This function plots the accuracy for all the mechnaism types for a
+    given model type and number of trials. This plot is a line plot that
+    also shows the standard deviation for the different values of epsilon,
+    as the noise is randomly added multiple trials are required to get an
+    accurate measure for the accuracy of the model at a given epsilon.
 
     Parameters
     ----------
@@ -191,12 +253,16 @@ def runModelLaplace(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, di
     
     # Non-private RF Neighbours
     kf = KFold(n_splits=5)
+    scaler = MinMaxScaler()
     
     overallTrainingAcc = []
     overallTestingAcc = []
     
     for i in range(trials):
         laplacePrivateDataset = addLaplaceNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
+        scaler.fit(laplacePrivateDataset)
+        scaled = scaler.fit_transform(laplacePrivateDataset)
+        laplacePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
         training_acc = []
         testing_acc = []
         
@@ -229,12 +295,16 @@ def runModelGaussian(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, d
     
     # Non-private RF Neighbours
     kf = KFold(n_splits=5)
+    scaler = MinMaxScaler()
     
     overallTrainingAcc = []
     overallTestingAcc = []
     
     for i in range(trials):
         gaussianPrivateDataset = addGaussianNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
+        scaler.fit(gaussianPrivateDataset)
+        scaled = scaler.fit_transform(gaussianPrivateDataset)
+        gaussianPrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
         training_acc = []
         testing_acc = []
         
@@ -266,12 +336,16 @@ def runModelStaircase(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, 
     
     # Non-private RF Neighbours
     kf = KFold(n_splits=5)
+    scaler = MinMaxScaler()
     
     overallTrainingAcc = []
     overallTestingAcc = []
     
     for i in range(trials):
-        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, 0.5, diabetes_features)
+        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0.5, scale, 0.5, diabetes_features)
+        scaler.fit(staircasePrivateDataset)
+        scaled = scaler.fit_transform(staircasePrivateDataset)
+        staircasePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
         training_acc = []
         testing_acc = []
         
@@ -295,6 +369,9 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     """
     This function should run whatever model is put in the model parameter.
     It should also run for the number of trials given.
+    
+    Note: This code is outdated and generateAccPrivacyGraphAll now does much 
+    tha same purpose. I'm keeping this code incase any aspects are useful.
 
     Parameters
     ----------
@@ -454,7 +531,7 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     # Private Staircase Logistic Regression Model
     for i in range(trials):
         # Generate a copy of the data set to make private
-        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, 0.5, diabetes_features)
+        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0.5, scale, 0.5, diabetes_features)
         training_acc = []
         testing_acc = []
         
