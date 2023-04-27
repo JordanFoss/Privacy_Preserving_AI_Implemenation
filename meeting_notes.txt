@@ -40,7 +40,10 @@
 30/3/2023 Meeting:
 	- Show the different mechnaisms that can be used (Done)
 	- Explain how the noise is added (Done)
-	- Show the relationship to epsilon and delta
-	- Line box and whisker plot for accuracy vs privacy
+	- Show the relationship of privacy to epsilon and delta
+	- Line box and whisker plot for accuracy vs privacy (Done)
 	- Always use 3 dots for ... (Done)
-	- Send Dan an email asking about access to the cluster for run my experiments
+	- Send Dan an email asking about access to the cluster for run my experiments (I can manage to get reasonable computation times by using incements of 0.5 for epsilon)
+	
+27/4/2023 Meeting:
+	- 

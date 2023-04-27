@@ -166,7 +166,48 @@ def loadDiabetesData():
     diabetes = pd.DataFrame(scaled, columns=diabetes.columns)
     return diabetes
 
-def addLaplaceNoise(dataSet, mu, scale, features):
+def addLaplaceNoiseRNM(dataSet, mu, scale, features):
+    """
+    This function takes a pandas dataframe and introduces random noise to it from
+    the Laplace distribution. The parameters of said distribution are defined
+    in the function call. This noise is added in a random noise max manner
+    where the max is taken from the value in the data and the laplace noise.
+    
+    Note: This doesn't work
+    
+    Parameters
+    ----------
+    dataSet : Pandas.Dataframe
+        The dataset that you wish to add the noise to.
+    mu : float
+        The mean for the laplace distribution.
+    scale : float
+        The standard deviation.
+    features : [str]
+        Features to add noise to.
+
+    Returns
+    -------
+    privateDataSet : Pandas.Dataframe
+        A copy of the dataSet with laplace random noise added.
+
+    """
+    privateDataSet = dataSet.copy()
+    #Generate the noise to be added to the data
+    noiseArray = [np.random.laplace(mu, scale) for x in range(dataSet.size)]
+    
+    #Normalise the noise to have the same bounds as the data
+    normalNoiseArray = [(x - np.min(noiseArray))/(np.max(noiseArray) - np.min(noiseArray)) for x in noiseArray]
+    
+    noiseIndex = 0
+    
+    for feature in features:
+        for index in range(dataSet[feature].size):
+            privateDataSet[feature][index] = max(dataSet[feature][index], normalNoiseArray[noiseIndex])
+            noiseIndex += 1
+    return privateDataSet
+
+def addLaplaceNoiseCell(dataSet, mu, scale, features):
     """
     This function takes a pandas dataframe and adds random noise to it from
     the Laplace distribution. The parameters of said distribution are defined
@@ -193,6 +234,38 @@ def addLaplaceNoise(dataSet, mu, scale, features):
     for feature in features:
         for index in range(dataSet[feature].size):
             privateDataSet[feature][index] += np.random.laplace(mu, scale)
+    return privateDataSet
+
+def addLaplaceNoiseRow(dataSet, mu, scale, features):
+    """
+    This function takes a pandas dataframe and adds random noise to it from
+    the Laplace distribution. The parameters of said distribution are defined
+    in the function call. The same noise is added to each row.
+    
+    Note: This doesn't work, it gives very strange results
+    
+    Parameters
+    ----------
+    dataSet : Pandas.Dataframe
+        The dataset that you wish to add the noise to.
+    mu : float
+        The mean for the laplace distribution.
+    scale : float
+        The standard deviation.
+    features : [str]
+        Features to add noise to.
+
+    Returns
+    -------
+    privateDataSet : Pandas.Dataframe
+        A copy of the dataSet with laplace random noise added.
+
+    """
+    privateDataSet = dataSet.copy()
+    for feature in features:
+        noise = np.random.laplace(mu, scale)
+        for index in range(dataSet[feature].size):
+            privateDataSet[feature][index] += noise
     return privateDataSet
     
 def addGaussianNoiseCell(dataSet, mu, scale, features):
@@ -383,60 +456,3 @@ def staircaseRV(epsilon, sensitivity, gamma):
     X = S*((1 - B)*((G + gamma*U)*sensitivity) + B*((G + gamma + (1 - gamma)*U)*sensitivity))
     
     return X
-
-
-# These functions are for the Differentially private gradient descent model
-# The thing to keep in mind with this is that noise is not added to the data
-# noise is just added to the gradient as it searchs for the minimum loss
-def gradient(theta, xi, yi):
-    exponent = yi * (xi.dot(theta))
-    return - (yi*xi) / (1+np.exp(exponent))
-
-def L2_clip(v, b):
-    norm = np.linalg.norm(v, ord=2)
-    
-    if norm > b:
-        return b * (v / norm)
-    else:
-        return v
-
-def avg_grad(theta, X, y):
-    grads = [gradient(theta, xi, yi) for xi, yi in zip(X, y)]
-    return np.mean(grads, axis=0)
-
-def laplace_mech(v, sensitivity, epsilon):
-    return v + np.random.laplace(loc=0, scale=sensitivity / epsilon)
-
-def gaussian_mech(v, sensitivity, epsilon, delta):
-    return v + np.random.normal(loc=0, scale=sensitivity * np.sqrt(2*np.log(1.25/delta)) / epsilon)
-
-def gaussian_mech_vec(v, sensitivity, epsilon, delta):
-    return v + np.random.normal(loc=0, scale=sensitivity * np.sqrt(2*np.log(1.25/delta)) / epsilon, size=len(v))
-
-def gradient_sum(theta, X, y, b):
-    gradients = [L2_clip(gradient(theta, x_i, y_i), b) for x_i, y_i in zip(X,y)]
-        
-    # sum query
-    # L2 sensitivity is b (by clipping performed above)
-    return np.sum(gradients, axis=0)
-
-def noisy_gradient_descent(X_train, y_train, iterations, epsilon, delta):
-    # Starts with a guess model of all zeros
-    theta = np.zeros(X_train.shape[1])
-    
-    sensitivity = 5.0
-    
-    # A count of the number of training elements with some added noise
-    # Compute a noisy count of the number of training examples (sensitivity 1)
-    noisy_count = gaussian_mech(X_train.shape[0], 1, epsilon, delta)
-
-    for i in range(iterations):
-        # Add noise to the sum of the gradients based on its sensitivity
-        grad_sum        = gradient_sum(theta, X_train, y_train, sensitivity)
-        noisy_grad_sum  = gaussian_mech_vec(grad_sum, sensitivity, epsilon, delta)
-        
-        # Divide the noisy sum from (1) by the noisy count from (2)
-        noisy_avg_grad  = noisy_grad_sum / noisy_count
-        theta           = theta - noisy_avg_grad
-
-    return theta
