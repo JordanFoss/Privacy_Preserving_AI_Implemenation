@@ -24,6 +24,7 @@ def plotDataBeforeAndAfterNoise():
     """
     
     diabetes = loadDiabetesData()
+    diabetes = diabetes.rename(columns={'DiabetesPedigreeFunction' : 'DPF'})
     # ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
     diabetes_feature_labels = [x for i,x in enumerate(diabetes.columns) if i!=8]
         
@@ -32,7 +33,7 @@ def plotDataBeforeAndAfterNoise():
     
     #Standard Deviation for noise
     scale = sensitivity/epsilon
-    diabetes.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    diabetes.boxplot(column=diabetes_feature_labels, grid=False, rot=75, fontsize=10)
     plt.title("Original Dataset")
     plt.show()
     
@@ -43,7 +44,7 @@ def plotDataBeforeAndAfterNoise():
     scaled = scaler.fit_transform(laplacePrivateDataset)
     laplacePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
     
-    laplacePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    laplacePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=75, fontsize=10)
     plt.title("Laplace Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
     plt.show()
     
@@ -53,16 +54,16 @@ def plotDataBeforeAndAfterNoise():
     scaled = scaler.fit_transform(gaussianPrivateDataset)
     gaussianPrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
     
-    gaussianPrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    gaussianPrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=75, fontsize=10)
     plt.title("Gaussian Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
     plt.show()
     
-    staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0.5, scale, 0.5, diabetes_feature_labels)
+    staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 5, scale, 0.5, diabetes_feature_labels)
     scaler.fit(staircasePrivateDataset)
     scaled = scaler.fit_transform(staircasePrivateDataset)
     staircasePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
     
-    staircasePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=90, fontsize=10)
+    staircasePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=75, fontsize=10)
     plt.title("Staricase Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
     plt.show()
 
@@ -132,6 +133,88 @@ def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
     
     return l_training_results, l_testing_results
 
+
+def generateAccPrivacyGraphStaircase(model_type, trials, diabetes_features=[]):
+    """
+    This function generates accuracy graphs for a model type with a given number
+    of trials (since random noise is added multiple trials
+    are taken to negate the varience). This results are then ploted to show 
+    accuracy over a range of different epsilons.
+
+    Parameters
+    ----------
+    model : str
+        String representing the model to run.
+    trials : int
+        Number of trials to run for the noisy models.
+    diabetes_features : [str]
+        List of features using for feature importance analysis
+        
+    Returns
+    -------
+    Graphs showing accuracy for non-private and laplace noise
+    
+    """
+    #Load in the data
+    diabetes = loadDiabetesData()
+    
+    # Generate the Non-Private accuracies for comparsion
+    np_tr, np_ts = runModelNonPrivate(model_type, diabetes)
+    
+    s_training_results = []
+    s_testing_results = []
+    sensitivity = 1
+    epsilons = np.linspace(0.5, 10, 20)
+    staircaseEpsilons = np.linspace(0.5, 3, 6)
+    counter = 0
+    for epsilon in epsilons:
+        staircaseEpsilonTrainingResults = []
+        staircaseEpsilonTestingResults = []
+        for staircaseEpsilon in staircaseEpsilons:
+            s_tr, s_ts = runModelStaircase(model_type, trials, diabetes, staircaseEpsilon, sensitivity, epsilon)
+            staircaseEpsilonTrainingResults.append(s_tr)
+            staircaseEpsilonTestingResults.append(s_ts)
+        print(counter)
+        counter += 1
+        s_training_results.append(staircaseEpsilonTrainingResults)
+        s_testing_results.append(staircaseEpsilonTestingResults)
+    
+    sTrainingFinalResults = []
+    sTestingFinalResults = []
+    for index in range(len(staircaseEpsilons)):
+        sTrainingFinalResults.append([x[index] for x in s_training_results])
+        sTestingFinalResults.append([x[index] for x in s_testing_results])
+    
+    fig = plt.figure(figsize =(10, 7))
+ 
+    # Creating axes instance
+    ax = fig.add_axes([0, 0, 1, 1])
+    
+    for index in range(len(staircaseEpsilons)):
+        ax.errorbar(epsilons, [np.mean(x) for x in sTrainingFinalResults[index]], yerr=0,
+                    capsize=5, label="Staircase Private "+str(staircaseEpsilons[index]))
+    ax.plot(epsilons, [np_tr for x in range(len(epsilons))], label="Non-Private")
+    plt.title(str(model_type) + " Training Accuracies (" + str(trials) + " trials)")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
+    plt.legend()
+    plt.show()
+    
+    fig = plt.figure(figsize =(8, 5))
+ 
+    # Creating axes instance
+    ax = fig.add_axes([0, 0, 1, 1])
+    
+    for index in range(len(staircaseEpsilons)):
+        ax.errorbar(epsilons, [np.mean(x) for x in sTestingFinalResults[index]], yerr=0,
+                    capsize=5, label="Staircase Private"+str(staircaseEpsilons[index]))
+    ax.plot(epsilons, [np_ts for x in range(len(epsilons))], label="Non-Private")
+    plt.title(str(model_type) + " Testing Accuracies (" + str(trials) + " trials)")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
+    plt.legend()
+    plt.show()
+
 def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
     """
     This function plots the accuracy for all the mechnaism types for a
@@ -172,7 +255,7 @@ def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
     for epsilon in epsilons:
         l_tr, l_ts = runModelLaplace(model_type, trials, diabetes, sensitivity, epsilon)
         g_tr, g_ts = runModelGaussian(model_type, trials, diabetes, sensitivity, epsilon)
-        s_tr, s_ts = runModelStaircase(model_type, trials, diabetes, sensitivity, epsilon)
+        s_tr, s_ts = runModelStaircase(model_type, trials, diabetes, epsilon, sensitivity, epsilon)
         l_training_results.append(l_tr)
         l_testing_results.append(l_ts)
         g_training_results.append(g_tr)
@@ -324,7 +407,7 @@ def runModelGaussian(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, d
     # Model is done being generated
     return overallTrainingAcc, overallTestingAcc
 
-def runModelStaircase(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, diabetes_features=[]):
+def runModelStaircase(model_type, trials, diabetes, staircaseEpsilon, sensitivity=1, epsilon=0.1, diabetes_features=[]):
     #Standard Deviation for noise
     scale = sensitivity/epsilon
     
@@ -342,7 +425,8 @@ def runModelStaircase(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, 
     overallTestingAcc = []
     
     for i in range(trials):
-        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0.5, scale, 0.5, diabetes_features)
+        #Note that increaing the epsilon value provides better results in the model
+        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], staircaseEpsilon, scale, 0.5, diabetes_features)
         scaler.fit(staircasePrivateDataset)
         scaled = scaler.fit_transform(staircasePrivateDataset)
         staircasePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)

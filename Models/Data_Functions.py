@@ -355,9 +355,11 @@ def addStaircaseNoise(dataSet, epsilon, delta, gamma, features):
 
     """
     privateDataSet = dataSet.copy()
+    b = np.exp(-epsilon)
+    probs = [probability_to_occur_at(z, b) for z in range(100)]
     for feature in features:
         for index in range(dataSet[feature].size):
-            privateDataSet[feature][index] += staircaseRV(epsilon, delta, gamma)
+            privateDataSet[feature][index] += staircaseRV(epsilon, delta, gamma, probs, b)
     return privateDataSet
     
 def probability_to_occur_at(attempt, b):
@@ -410,7 +412,7 @@ def geometricRV(b, probs):
         G = len(probs)
     return G
 
-def staircaseRV(epsilon, sensitivity, gamma):
+def staircaseRV(epsilon, delta, gamma, probs, b):
     """
     This function outputs a random variable from the staircase distribution.
     
@@ -438,10 +440,7 @@ def staircaseRV(epsilon, sensitivity, gamma):
     else:
         S = 1
     
-    #Second generate G
-    b = np.exp(-epsilon)
-    probs = [probability_to_occur_at(z, b) for z in range(100)]
-    
+    #Second generate G    
     G = geometricRV(b, probs)
     
     #Thrid generate U uniformly distributioned between [0,1]
@@ -456,6 +455,6 @@ def staircaseRV(epsilon, sensitivity, gamma):
     else:
         B = 1
     
-    X = S*((1 - B)*((G + gamma*U)*sensitivity) + B*((G + gamma + (1 - gamma)*U)*sensitivity))
+    X = S*((1 - B)*((G + gamma*U)*delta) + B*((G + gamma + (1 - gamma)*U)*delta))
     
     return X
