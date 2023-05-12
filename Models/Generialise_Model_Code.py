@@ -407,7 +407,7 @@ def runModelGaussian(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, d
     # Model is done being generated
     return overallTrainingAcc, overallTestingAcc
 
-def runModelStaircase(model_type, trials, diabetes, staircaseEpsilon, sensitivity=1, epsilon=0.1, diabetes_features=[]):
+def runModelStaircase(model_type, trials, diabetes, epsilon, sensitivity=1, diabetes_features=[]):
     #Standard Deviation for noise
     scale = sensitivity/epsilon
     
@@ -426,7 +426,7 @@ def runModelStaircase(model_type, trials, diabetes, staircaseEpsilon, sensitivit
     
     for i in range(trials):
         #Note that increaing the epsilon value provides better results in the model
-        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], staircaseEpsilon, scale, 0.5, diabetes_features)
+        staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], epsilon, scale, 0.5, diabetes_features)
         scaler.fit(staircasePrivateDataset)
         scaled = scaler.fit_transform(staircasePrivateDataset)
         staircasePrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
@@ -530,7 +530,7 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     l_mean_feature_importance = []
     
     for i in range(trials):
-        laplacePrivateDataset = addLaplaceNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
+        laplacePrivateDataset = addLaplaceNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
         training_acc = []
         testing_acc = []
         
