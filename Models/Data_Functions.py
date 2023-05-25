@@ -156,7 +156,7 @@ def loadDiabetesData():
         Normalised diabetes data set as a Pandas dataframe.
 
     """
-    diabetes = pd.read_csv('/home/jordan/Documents/UniversityStuff/2022/Semester2/ENGG4812/Privacy_Preserving_AI_Implemenation/Data_Sets/diabetes.csv')
+    diabetes = pd.read_csv('../Data_Sets/diabetes.csv')
     pd.set_option('mode.chained_assignment', None)
     
     #Min-Max Normalise the data
@@ -173,7 +173,8 @@ def addLaplaceNoiseRNM(dataSet, mu, scale, features):
     in the function call. This noise is added in a random noise max manner
     where the max is taken from the value in the data and the laplace noise.
     
-    Note: This doesn't work
+    Note: This function doesn't provide reasonable results. It's useful
+    should be investigated at a later date.
     
     Parameters
     ----------
@@ -242,7 +243,7 @@ def addLaplaceNoiseRow(dataSet, mu, scale, features):
     the Laplace distribution. The parameters of said distribution are defined
     in the function call. The same noise is added to each row.
     
-    Note: This doesn't work, it gives very strange results
+    Note: This doesn't satisfy epsilon-DP, this function was used as an experiment.
     
     Parameters
     ----------
@@ -305,7 +306,7 @@ def addGaussianNoiseRow(dataSet, mu, scale, features):
     in the function call. Additionally, the random noise is added to each row
     so the noise to each feature in that row is the same.
     
-    Note: This doesn't work, it gives very strange results
+    Note: This doesn't satisfy epsilon-DP, this function was used as an experiment.
     
     Parameters
     ----------
