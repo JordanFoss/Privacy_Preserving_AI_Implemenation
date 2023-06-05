@@ -33,7 +33,7 @@ def plotDataBeforeAndAfterNoise(diabetes_feature=[]):
     
     diabetes = loadDiabetesData()
     diabetes = diabetes.rename(columns={'DiabetesPedigreeFunction' : 'DPF'})
-    # ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+    # ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DPF', 'Age']
     diabetes_feature_labels = [x for i,x in enumerate(diabetes.columns) if i!=8]
         
     sensitivity = 1
@@ -74,9 +74,19 @@ def plotDataBeforeAndAfterNoise(diabetes_feature=[]):
     staircasePrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=75, fontsize=10)
     plt.title("Staricase Private Dataset With Epsilon=" + str(epsilon) + " Privacy Budget")
     plt.show()
+    
+    gaussianPrivateDataset -= diabetes.loc[:, diabetes.columns != 'Outcome']
+    
+    scaler.fit(gaussianPrivateDataset)
+    scaled = scaler.fit_transform(gaussianPrivateDataset)
+    gaussianPrivateDataset = pd.DataFrame(scaled, columns=diabetes_feature_labels)
+    
+    gaussianPrivateDataset.boxplot(column=diabetes_feature_labels, grid=False, rot=75, fontsize=10)
+    plt.title("Gaussian Distribution With Epsilon=" + str(epsilon) + " Privacy Budget")
+    plt.show()
 
 
-def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
+def generateAccPrivacyGraphNoiseType(noiseType, trials, diabetes_features=[]):
     """
     This function generates accuracy graphs for a model type with a given number
     of trials (since random noise is added multiple trials
@@ -102,26 +112,83 @@ def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
     diabetes = loadDiabetesData()
     
     # Generate the Non-Private accuracies for comparsion
-    np_tr, np_ts = runModelNonPrivate(model_type, diabetes)
+    #np_tr, np_ts = runModelNonPrivate(model_type, diabetes)
     
-    l_training_results = []
-    l_testing_results = []
+    RF_training_results = []
+    RF_testing_results = []
+    DT_training_results = []
+    DT_testing_results = []
+    GB_training_results = []
+    GB_testing_results = []
+    LR_training_results = []
+    LR_testing_results = []
+    KNN_training_results = []
+    KNN_testing_results = []
+    SVM_training_results = []
+    SVM_testing_results = []
+    
     sensitivity = 1
     epsilons = np.linspace(0.5, 10, 20)
     for epsilon in epsilons:
-        l_tr, l_ts = runModelLaplace(model_type, trials, diabetes, sensitivity, epsilon)
-        l_training_results.append(l_tr)
-        l_testing_results.append(l_ts)
+        if noiseType == "Laplace":
+            RF_tr, RF_ts = runModelLaplace("RF", trials, diabetes, sensitivity, epsilon)
+            DT_tr, DT_ts = runModelLaplace("DT", trials, diabetes, sensitivity, epsilon)
+            GB_tr, GB_ts = runModelLaplace("GB", trials, diabetes, sensitivity, epsilon)
+            LR_tr, LR_ts = runModelLaplace("LR", trials, diabetes, sensitivity, epsilon)
+            KNN_tr, KNN_ts = runModelLaplace("KNN", trials, diabetes, sensitivity, epsilon)
+            SVM_tr, SVM_ts = runModelLaplace("SVM", trials, diabetes, sensitivity, epsilon)
+        elif noiseType == "Gaussian":
+            RF_tr, RF_ts = runModelGaussian("RF", trials, diabetes, sensitivity, epsilon)
+            DT_tr, DT_ts = runModelGaussian("DT", trials, diabetes, sensitivity, epsilon)
+            GB_tr, GB_ts = runModelGaussian("GB", trials, diabetes, sensitivity, epsilon)
+            LR_tr, LR_ts = runModelGaussian("LR", trials, diabetes, sensitivity, epsilon)
+            KNN_tr, KNN_ts = runModelGaussian("KNN", trials, diabetes, sensitivity, epsilon)
+            SVM_tr, SVM_ts = runModelGaussian("SVM", trials, diabetes, sensitivity, epsilon)
+        elif noiseType == "Staircase":
+            RF_tr, RF_ts = runModelStaircase("RF", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            DT_tr, DT_ts = runModelStaircase("DT", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            GB_tr, GB_ts = runModelStaircase("GB", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            LR_tr, LR_ts = runModelStaircase("LR", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            KNN_tr, KNN_ts = runModelStaircase("KNN", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            SVM_tr, SVM_ts = runModelStaircase("SVM", trials, diabetes, epsilon, sensitivity, diabetes_features)
+        else:
+            print("Invalid Noise Type")
+            return
+            
+            
+        RF_training_results.append(RF_tr)
+        RF_testing_results.append(RF_ts)
+        DT_training_results.append(DT_tr)
+        DT_testing_results.append(DT_ts)
+        GB_training_results.append(GB_tr)
+        GB_testing_results.append(GB_ts)
+        LR_training_results.append(LR_tr)
+        LR_testing_results.append(LR_ts)
+        KNN_training_results.append(KNN_tr)
+        KNN_testing_results.append(KNN_ts)
+        SVM_training_results.append(SVM_tr)
+        SVM_testing_results.append(SVM_ts)
     
     fig = plt.figure(figsize =(10, 7))
  
     # Creating axes instance
     ax = fig.add_axes([0, 0, 1, 1])
     
-    ax.errorbar(epsilons, [np.mean(x) for x in l_training_results], yerr=[np.std(x) for x in l_training_results],
-                capsize=5, label="Laplace Private")
-    ax.plot(epsilons, [np_tr for x in range(len(epsilons))], label="Non-Private")
-    plt.title(str(model_type) + " Training Accuracies (" + str(trials) + " trials)")
+    ax.errorbar(epsilons, [np.mean(x) for x in RF_training_results], yerr=[np.std(x) for x in RF_training_results],
+                capsize=5, label="Random Forest")
+    ax.errorbar(epsilons, [np.mean(x) for x in DT_training_results], yerr=[np.std(x) for x in DT_training_results],
+                capsize=5, label="Decision Tree")
+    ax.errorbar(epsilons, [np.mean(x) for x in GB_training_results], yerr=[np.std(x) for x in GB_training_results],
+                capsize=5, label="Gradient Boosting")
+    ax.errorbar(epsilons, [np.mean(x) for x in LR_training_results], yerr=[np.std(x) for x in LR_training_results],
+                capsize=5, label="Logistic Regression")
+    ax.errorbar(epsilons, [np.mean(x) for x in KNN_training_results], yerr=[np.std(x) for x in KNN_training_results],
+                capsize=5, label="K Nearest Neighbours")
+    ax.errorbar(epsilons, [np.mean(x) for x in SVM_training_results], yerr=[np.std(x) for x in SVM_training_results],
+                capsize=5, label="Support Vector Machine")
+    
+    #ax.plot(epsilons, [np_tr for x in range(len(epsilons))], label="Non-Private")
+    plt.title(noiseType + " Training Accuracies (" + str(trials) + " trials)")
     plt.ylabel("Accuracy")
     plt.xlabel("Epsilon")
     plt.legend()
@@ -132,18 +199,25 @@ def generateAccPrivacyGraphLaplace(model_type, trials, diabetes_features=[]):
     # Creating axes instance
     ax = fig.add_axes([0, 0, 1, 1])
     
-    ax.errorbar(epsilons, [np.mean(x) for x in l_testing_results], yerr=[np.std(x) for x in l_testing_results],
-                capsize=5, label="Laplace Private")
-    ax.plot(epsilons, [np_ts for x in range(len(epsilons))], label="Non-Private")
-    plt.title(str(model_type) + " Testing Accuracies (" + str(trials) + " trials)")
+    ax.errorbar(epsilons, [np.mean(x) for x in RF_testing_results], yerr=[np.std(x) for x in RF_testing_results],
+                capsize=5, label="Random Forest")
+    ax.errorbar(epsilons, [np.mean(x) for x in DT_testing_results], yerr=[np.std(x) for x in DT_testing_results],
+                capsize=5, label="Decision Tree")
+    ax.errorbar(epsilons, [np.mean(x) for x in GB_testing_results], yerr=[np.std(x) for x in GB_testing_results],
+                capsize=5, label="Gradient Boosting")
+    ax.errorbar(epsilons, [np.mean(x) for x in LR_testing_results], yerr=[np.std(x) for x in LR_testing_results],
+                capsize=5, label="Logistic Regression")
+    ax.errorbar(epsilons, [np.mean(x) for x in KNN_testing_results], yerr=[np.std(x) for x in KNN_testing_results],
+                capsize=5, label="K Nearest Neighbours")
+    ax.errorbar(epsilons, [np.mean(x) for x in SVM_testing_results], yerr=[np.std(x) for x in SVM_testing_results],
+                capsize=5, label="Support Vector Machine")
+    
+    #ax.plot(epsilons, [np_ts for x in range(len(epsilons))], label="Non-Private")
+    plt.title(noiseType + " Testing Accuracies (" + str(trials) + " trials)")
     plt.ylabel("Accuracy")
     plt.xlabel("Epsilon")
     plt.legend()
     plt.show()
-    
-    print("Time taken is: " + str(time() - startTime))
-    
-    return l_training_results, l_testing_results
 
 
 def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
@@ -305,7 +379,6 @@ def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
     plt.show()
     print("Time taken is: " + str(time() - startTime))
     
-    
 def runModelDeepNonPrivate(model, diabetes):    
     """
     This function trains a deep learning model on the original dataset.
@@ -422,8 +495,10 @@ def runDeepModelWithTrials(model, trials, noiseType, diabetes, sensitivity=1, ep
     
     model.save_weights('untraineMmodel.h5')
     
+    # For some number of trials generate the private dataset, then train the model on that private dataset
+    # and record the results. Multiple trials are needed as the noise added is random and thus
+    # mutliple trials are required measure mean and variance
     for i in range(trials):
-        
         if noiseType == "Laplace":
             privateDataset = addLaplaceNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
         elif noiseType == "Gaussian":
@@ -574,6 +649,9 @@ def runModelLaplace(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, di
     overallTrainingAcc = []
     overallTestingAcc = []
     
+    # For some number of trials generate the private dataset, then train the model on that private dataset
+    # and record the results. Multiple trials are needed as the noise added is random and thus
+    # mutliple trials are required measure mean and variance
     for i in range(trials):
         laplacePrivateDataset = addLaplaceNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
         scaler.fit(laplacePrivateDataset)
@@ -642,6 +720,9 @@ def runModelGaussian(model_type, trials, diabetes, sensitivity=1, epsilon=0.1, d
     overallTrainingAcc = []
     overallTestingAcc = []
     
+    # For some number of trials generate the private dataset, then train the model on that private dataset
+    # and record the results. Multiple trials are needed as the noise added is random and thus
+    # mutliple trials are required measure mean and variance
     for i in range(trials):
         gaussianPrivateDataset = addGaussianNoiseCell(diabetes.loc[:, diabetes.columns != 'Outcome'], 0, scale, diabetes_features)
         scaler.fit(gaussianPrivateDataset)
@@ -709,6 +790,9 @@ def runModelStaircase(model_type, trials, diabetes, epsilon, sensitivity=1, diab
     overallTrainingAcc = []
     overallTestingAcc = []
     
+    # For some number of trials generate the private dataset, then train the model on that private dataset
+    # and record the results. Multiple trials are needed as the noise added is random and thus
+    # mutliple trials are required measure mean and variance
     for i in range(trials):
         #Note that increaing the epsilon value provides better results in the model
         staircasePrivateDataset = addStaircaseNoise(diabetes.loc[:, diabetes.columns != 'Outcome'], epsilon, scale, 0.5, diabetes_features)
