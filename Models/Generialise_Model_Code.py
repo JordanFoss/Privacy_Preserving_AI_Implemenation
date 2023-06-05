@@ -85,6 +85,149 @@ def plotDataBeforeAndAfterNoise(diabetes_feature=[]):
     plt.title("Gaussian Distribution With Epsilon=" + str(epsilon) + " Privacy Budget")
     plt.show()
 
+def generateDiffAccPrivacyGraphNoiseType(noiseType, trials, diabetes_features=[]):
+    """
+    This function generates accuracy graphs for a model type with a given number
+    of trials (since random noise is added multiple trials
+    are taken to negate the varience). This results are then ploted to show 
+    accuracy over a range of different epsilons.
+
+    Parameters
+    ----------
+    model : str
+        String representing the model to run.
+    trials : int
+        Number of trials to run for the noisy models.
+    diabetes_features : [str]
+        List of features using for feature importance analysis
+        
+    Returns
+    -------
+    Graphs showing accuracy for non-private and laplace noise
+    
+    """
+    startTime = time()
+    #Load in the data
+    diabetes = loadDiabetesData()
+    
+    # Generate the Non-Private accuracies for comparsion
+    np_tr_RF, np_ts_RF = runModelNonPrivate("RF", diabetes)
+    
+    np_tr_LR, np_ts_LR = runModelNonPrivate("LR", diabetes)
+    
+    np_tr_SVM, np_ts_SVM = runModelNonPrivate("SVM", diabetes)
+    
+    np_tr_GB, np_ts_GB = runModelNonPrivate("GB", diabetes)
+    
+    np_tr_DT, np_ts_DT = runModelNonPrivate("DT", diabetes)
+    
+    np_tr_KNN, np_ts_KNN = runModelNonPrivate("KNN", diabetes)
+    
+    RF_training_results = []
+    RF_testing_results = []
+    DT_training_results = []
+    DT_testing_results = []
+    GB_training_results = []
+    GB_testing_results = []
+    LR_training_results = []
+    LR_testing_results = []
+    KNN_training_results = []
+    KNN_testing_results = []
+    SVM_training_results = []
+    SVM_testing_results = []
+    
+    sensitivity = 1
+    epsilons = np.linspace(0.5, 10, 20)
+    for epsilon in epsilons:
+        if noiseType == "Laplace":
+            RF_tr, RF_ts = runModelLaplace("RF", trials, diabetes, sensitivity, epsilon)
+            DT_tr, DT_ts = runModelLaplace("DT", trials, diabetes, sensitivity, epsilon)
+            GB_tr, GB_ts = runModelLaplace("GB", trials, diabetes, sensitivity, epsilon)
+            LR_tr, LR_ts = runModelLaplace("LR", trials, diabetes, sensitivity, epsilon)
+            KNN_tr, KNN_ts = runModelLaplace("KNN", trials, diabetes, sensitivity, epsilon)
+            SVM_tr, SVM_ts = runModelLaplace("SVM", trials, diabetes, sensitivity, epsilon)
+        elif noiseType == "Gaussian":
+            RF_tr, RF_ts = runModelGaussian("RF", trials, diabetes, sensitivity, epsilon)
+            DT_tr, DT_ts = runModelGaussian("DT", trials, diabetes, sensitivity, epsilon)
+            GB_tr, GB_ts = runModelGaussian("GB", trials, diabetes, sensitivity, epsilon)
+            LR_tr, LR_ts = runModelGaussian("LR", trials, diabetes, sensitivity, epsilon)
+            KNN_tr, KNN_ts = runModelGaussian("KNN", trials, diabetes, sensitivity, epsilon)
+            SVM_tr, SVM_ts = runModelGaussian("SVM", trials, diabetes, sensitivity, epsilon)
+        elif noiseType == "Staircase":
+            RF_tr, RF_ts = runModelStaircase("RF", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            DT_tr, DT_ts = runModelStaircase("DT", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            GB_tr, GB_ts = runModelStaircase("GB", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            LR_tr, LR_ts = runModelStaircase("LR", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            KNN_tr, KNN_ts = runModelStaircase("KNN", trials, diabetes, epsilon, sensitivity, diabetes_features)
+            SVM_tr, SVM_ts = runModelStaircase("SVM", trials, diabetes, epsilon, sensitivity, diabetes_features)
+        else:
+            print("Invalid Noise Type")
+            return
+            
+            
+        RF_training_results.append(RF_tr)
+        RF_testing_results.append(RF_ts)
+        DT_training_results.append(DT_tr)
+        DT_testing_results.append(DT_ts)
+        GB_training_results.append(GB_tr)
+        GB_testing_results.append(GB_ts)
+        LR_training_results.append(LR_tr)
+        LR_testing_results.append(LR_ts)
+        KNN_training_results.append(KNN_tr)
+        KNN_testing_results.append(KNN_ts)
+        SVM_training_results.append(SVM_tr)
+        SVM_testing_results.append(SVM_ts)
+    
+    fig = plt.figure(figsize =(10, 7))
+ 
+    # Creating axes instance
+    ax = fig.add_axes([0, 0, 1, 1])
+    
+    ax.errorbar(epsilons, [np_tr_RF - np.mean(x) for x in RF_training_results], yerr=[np.std([np_tr_RF - y for y in x]) for x in RF_training_results],
+                capsize=5, label="Random Forest")
+    ax.errorbar(epsilons, [np_tr_DT - np.mean(x) for x in DT_training_results], yerr=[np.std([np_tr_DT - y for y in x]) for x in DT_training_results],
+                capsize=5, label="Decision Tree")
+    ax.errorbar(epsilons, [np_tr_GB - np.mean(x) for x in GB_training_results], yerr=[np.std([np_tr_GB - y for y in x]) for x in GB_training_results],
+                capsize=5, label="Gradient Boosting")
+    ax.errorbar(epsilons, [np_tr_LR - np.mean(x) for x in LR_training_results], yerr=[np.std([np_tr_LR - y for y in x]) for x in LR_training_results],
+                capsize=5, label="Logistic Regression")
+    ax.errorbar(epsilons, [np_tr_KNN - np.mean(x) for x in KNN_training_results], yerr=[np.std([np_tr_KNN - y for y in x]) for x in KNN_training_results],
+                capsize=5, label="K Nearest Neighbours")
+    ax.errorbar(epsilons, [np_tr_SVM - np.mean(x) for x in SVM_training_results], yerr=[np.std([np_tr_SVM - y for y in x]) for x in SVM_training_results],
+                capsize=5, label="Support Vector Machine")
+    
+    #ax.plot(epsilons, [np_tr for x in range(len(epsilons))], label="Non-Private")
+    plt.title(noiseType + " Training Accuracy Difference (" + str(trials) + " trials)")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
+    plt.legend()
+    plt.show()
+    
+    fig = plt.figure(figsize =(8, 5))
+ 
+    # Creating axes instance
+    ax = fig.add_axes([0, 0, 1, 1])
+    
+    ax.errorbar(epsilons, [np_ts_RF - np.mean(x) for x in RF_testing_results], yerr=[np.std([np_ts_RF - y for y in x]) for x in RF_testing_results],
+                capsize=5, label="Random Forest")
+    ax.errorbar(epsilons, [np_ts_DT - np.mean(x) for x in DT_testing_results], yerr=[np.std([np_ts_DT - y for y in x]) for x in DT_testing_results],
+                capsize=5, label="Decision tsee")
+    ax.errorbar(epsilons, [np_ts_GB - np.mean(x) for x in GB_testing_results], yerr=[np.std([np_ts_GB - y for y in x]) for x in GB_testing_results],
+                capsize=5, label="Gradient Boosting")
+    ax.errorbar(epsilons, [np_ts_LR - np.mean(x) for x in LR_testing_results], yerr=[np.std([np_ts_LR - y for y in x]) for x in LR_testing_results],
+                capsize=5, label="Logistic Regression")
+    ax.errorbar(epsilons, [np_ts_KNN - np.mean(x) for x in KNN_testing_results], yerr=[np.std([np_ts_KNN - y for y in x]) for x in KNN_testing_results],
+                capsize=5, label="K Nearest Neighbours")
+    ax.errorbar(epsilons, [np_ts_SVM - np.mean(x) for x in SVM_testing_results], yerr=[np.std([np_ts_SVM - y for y in x]) for x in SVM_testing_results],
+                capsize=5, label="Support Vector Machine")
+    
+    #ax.plot(epsilons, [np_ts for x in range(len(epsilons))], label="Non-Private")
+    plt.title(noiseType + " Testing Accuracy Difference (" + str(trials) + " trials)")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epsilon")
+    plt.legend()
+    plt.show()
+
 
 def generateAccPrivacyGraphNoiseType(noiseType, trials, diabetes_features=[]):
     """
@@ -341,7 +484,7 @@ def generateAccPrivacyGraphAll(model_type, trials, diabetes_features=[]):
     ax.plot(epsilons, [np_tr for x in range(len(epsilons))], label="Non-Private")
     ax.plot(epsilons, [dnp_tr for x in range(len(epsilons))], label="Deep Non-Private")
     plt.title(str(model_type) + " Training Accuracies (" + str(trials) + " trials)")
-    plt.yticks([0.55, 0.6, 0.65, 0.7, 0.75])
+    plt.yticks([0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])
     plt.ylabel("Accuracy")
     plt.xlabel("Epsilon")
     plt.legend()
@@ -825,6 +968,7 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     
     Note: This code is outdated and generateAccPrivacyGraphAll now does much 
     tha same purpose. I'm keeping this code as it can generate feature importance graphs
+    and confusion matrices.
 
     Parameters
     ----------
@@ -925,7 +1069,7 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     if gen_figures:
         plotAccuracies(l_training_acc, np_training_acc, model_type, "Training", "Laplace")
         plotAccuracies(l_testing_acc, np_testing_acc, model_type, "Testing", "Laplace")
-        plotConfusionMatrix(y_test, model.predict(X_test), "Laplace Private " + model_type + " Confusion Matrix")
+        plotConfusionMatrix(y_test, model.predict(X_test), "Laplace Private " + model_type + " Confusion Matrix (epsilon=" + str(epsilon) + ")")
     
     if feature_flag and gen_figures:
         for index in range(len(diabetes_features)):
@@ -968,7 +1112,7 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     if gen_figures:
         plotAccuracies(g_training_acc, np_training_acc, model_type, "Training", "Gaussian")
         plotAccuracies(g_testing_acc, np_testing_acc, model_type, "Testing", "Gaussian")
-        plotConfusionMatrix(y_test, model.predict(X_test), "Gaussian Private " + model_type + " Confusion Matrix")
+        plotConfusionMatrix(y_test, model.predict(X_test), "Gaussian Private " + model_type + " Confusion Matrix (epsilon=" + str(epsilon) + ")")
     
     if feature_flag and gen_figures:
         for index in range(len(diabetes_features)):
@@ -1010,7 +1154,7 @@ def runModelAll(model_type, trials, sensitivity=1, epsilon=0.1, diabetes_feature
     if gen_figures:
         plotAccuracies(s_training_acc, np_training_acc, model_type, "Training", "Staircase")
         plotAccuracies(s_testing_acc, np_testing_acc, model_type, "Testing", "Staircase")
-        plotConfusionMatrix(y_test, model.predict(X_test), "Staircase Private " + model_type + " Confusion Matrix")
+        plotConfusionMatrix(y_test, model.predict(X_test), "Staircase Private " + model_type + " Confusion Matrix (epsilon=" + str(epsilon) + ")")
     
     if feature_flag and gen_figures:
         for index in range(len(diabetes_features)):
